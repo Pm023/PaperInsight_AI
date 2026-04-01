@@ -1,17 +1,16 @@
 import json
 import os
-import faiss
 import numpy as np
 from pydantic import BaseModel, Field
-from sentence_transformers import SentenceTransformer
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Embedder (Using absolute best lightweight sentence transformer for local usage)
-embedder = SentenceTransformer('all-MiniLM-L6-v2')
+# We will use Gemini embeddings and numpy instead of faiss/sentence-transformers
+_paper_embeddings_cache = None
+_papers_cache = None
 client = None
 try:
     client = genai.Client() # Picks up GEMINI_API_KEY from environment
@@ -30,29 +29,52 @@ class EvaluationResult(BaseModel):
     results_score: float = Field(description="Results score out of 10")
 
 def load_dataset_and_build_index(dataset_path: str):
+    global _paper_embeddings_cache, _papers_cache
+    if _papers_cache is not None and _paper_embeddings_cache is not None:
+        return _papers_cache, _paper_embeddings_cache
+
     if not os.path.exists(dataset_path):
-        return [], None
+        return [], []
     with open(dataset_path, 'r', encoding='utf-8') as f:
         papers = json.load(f)
     
     if not papers:
-        return [], None
+        return [], []
 
     texts = [p.get('title', '') + " " + p.get('abstract', '') for p in papers]
-    embeddings = embedder.encode(texts)
     
-    d = embeddings.shape[1]
-    index = faiss.IndexFlatL2(d)
-    index.add(np.array(embeddings).astype('float32'))
-    
-    return papers, index
+    if not client or not os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY") == "YOUR_API_KEY_HERE":
+        return papers, []
 
-def retrieve(query: str, papers: list, index, top_k=2):
-    if not index or not papers or not query.strip():
+    response = client.models.embed_content(
+        model='text-embedding-004',
+        contents=texts,
+    )
+    embeddings = np.array([e.values for e in response.embeddings], dtype='float32')
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    embeddings = embeddings / np.where(norms == 0, 1, norms)
+    
+    _papers_cache = papers
+    _paper_embeddings_cache = embeddings
+    return papers, embeddings
+
+def retrieve(query: str, papers: list, embeddings, top_k=2):
+    if len(papers) == 0 or len(embeddings) == 0 or not query.strip() or not client:
         return []
-    query_embedding = embedder.encode([query]).astype('float32')
-    D, I = index.search(query_embedding, top_k)
-    results = [papers[i] for i in I[0] if i < len(papers) and i >= 0]
+    
+    response = client.models.embed_content(
+        model='text-embedding-004',
+        contents=query,
+    )
+    query_emb = np.array(response.embeddings[0].values, dtype='float32')
+    q_norm = np.linalg.norm(query_emb)
+    if q_norm > 0:
+        query_emb = query_emb / q_norm
+        
+    similarities = np.dot(embeddings, query_emb)
+    top_indices = np.argsort(similarities)[::-1][:top_k]
+    
+    results = [papers[i] for i in top_indices if i < len(papers)]
     return results
 
 def evaluate_paper(sections: dict, dataset_path: str) -> EvaluationResult:

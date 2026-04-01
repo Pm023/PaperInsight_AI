@@ -2,7 +2,6 @@ fastapi
 uvicorn
 python-multipart
 pymupdf
-faiss-cpu
-sentence-transformers
+numpy
 google-genai
 python-dotenv
