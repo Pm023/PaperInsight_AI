@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperInsight AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>PaperInsight AI</h1>
+            </div>
+            <p>Upload a research paper to get professional AI-driven review, scoring, and RAG analysis.</p>
+        </header>
+        
+        <main>
+            <!-- Upload Section -->
+            <section id="upload-section" class="glass-card active-section">
+                <div class="upload-area" id="drop-zone">
+                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="upload-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <h2>Drag & Drop your PDF here</h2>
+                    <p>or click to browse</p>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <button class="btn-primary" onclick="document.getElementById('file-input').click()">Select File</button>
+                </div>
+            </section>
+
+            <!-- Loading Section -->
+            <section id="loading-section" class="glass-card hidden">
+                <div class="loader-container">
+                    <div class="spinner"></div>
+                    <h2>Agents analyzing your paper...</h2>
+                    <p>Reviewer, Research, and Data agents are reading the text and cross-referencing with our knowledge base.</p>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results-section" class="hidden">
+                <div class="dashboard">
+                    <!-- Top Row: Scores -->
+                    <div class="score-card main-score glass-card">
+                        <h3>Overall Score</h3>
+                        <div class="score-circle">
+                            <span id="final-score">7.5</span><span class="out-of">/10</span>
+                        </div>
+                        <div class="prob">
+                            Acceptance Probability: <span id="acc-prob" style="font-weight: bold; color: var(--accent);">--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="score-card break-down glass-card">
+                        <h3>Breakdown</h3>
+                        <div class="metric"><label>Novelty</label><div class="bar-bg"><div class="bar-fill" id="bar-novelty"></div></div><span id="score-novelty">0</span></div>
+                        <div class="metric"><label>Methodology</label><div class="bar-bg"><div class="bar-fill" id="bar-method"></div></div><span id="score-method">0</span></div>
+                        <div class="metric"><label>Clarity</label><div class="bar-bg"><div class="bar-fill" id="bar-clarity"></div></div><span id="score-clarity">0</span></div>
+                        <div class="metric"><label>Results</label><div class="bar-bg"><div class="bar-fill" id="bar-results"></div></div><span id="score-results">0</span></div>
+                    </div>
+
+                    <!-- Bottom Row: Feedback -->
+                    <div class="feedback-grid">
+                        <div class="feedback-card glass-card">
+                            <h3 class="text-green">Strengths</h3>
+                            <ul id="list-strengths"></ul>
+                        </div>
+                        <div class="feedback-card glass-card">
+                            <h3 class="text-red">Weaknesses</h3>
+                            <ul id="list-weaknesses"></ul>
+                        </div>
+                        <div class="feedback-card glass-card span-full">
+                            <h3 class="text-blue">Improvement Suggestions</h3>
+                            <ul id="list-suggestions"></ul>
+                        </div>
+                    </div>
+
+                    <!-- Improve My Paper Section -->
+                    <div class="action-card glass-card">
+                        <h3>Improve My Paper</h3>
+                        <p>We detected weak sections in your methodology. Click below to use our AI Rewrite API.</p>
+                        <button class="btn-secondary" id="btn-improve">Rewrite Weakest Section</button>
+                        <div class="rewrite-loader hidden" id="rewrite-loader">Generating improvements with Gemini API...</div>
+                        <div class="rewritten-text hidden" id="rewritten-text-container">
+                            <h4>Rewritten Section:</h4>
+                            <p id="rewritten-text-content"></p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-outline mt-4" style="width: 100%;" onclick="location.reload()">Upload Another Paper</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
