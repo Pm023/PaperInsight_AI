@@ -4,6 +4,12 @@ const uploadSection = document.getElementById('upload-section');
 const loadingSection = document.getElementById('loading-section');
 const resultsSection = document.getElementById('results-section');
 
+// Determine API base URL dynamically: use relative paths if served by the backend,
+// or fallback to the standard port 8000 if opened via file:// or other frontend dev servers.
+const API_BASE = window.location.protocol.startsWith('http') && !['5500', '3000', '5173', '8080'].includes(window.location.port)
+    ? ""
+    : "http://127.0.0.1:8000";
+
 let globalWeakestSectionText = "The methodology section lacked sufficient detail regarding the evaluation metrics and baseline models used for comparison."; // dummy fallback
 
 // Drag and Drop
@@ -46,7 +52,7 @@ async function handleUpload(file) {
 
     try {
         // Assume backend is mounted serving the frontend on same domain/port
-        const res = await fetch("/analyze", {
+        const res = await fetch(`${API_BASE}/analyze`, {
             method: "POST",
             body: formData
         });
@@ -59,7 +65,7 @@ async function handleUpload(file) {
         renderResults(data);
     } catch (error) {
         console.error("Analysis failed:", error);
-        alert("Failed to analyze PDF. Please check backend logs or try again.");
+        alert(`Failed to analyze PDF. Error Details: ${error.message || error}\n\nPlease check browser console or backend logs.`);
         loadingSection.classList.add('hidden');
         uploadSection.classList.remove('hidden');
         uploadSection.classList.add('active-section');
@@ -98,7 +104,6 @@ function renderResults(data) {
         li.innerText = s;
         lstStrengths.appendChild(li);
     });
-
     const lstWeaknesses = document.getElementById('list-weaknesses');
     lstWeaknesses.innerHTML = "";
     data.weaknesses.forEach(w => {
@@ -106,6 +111,7 @@ function renderResults(data) {
         li.innerText = w;
         lstWeaknesses.appendChild(li);
     });
+
 
     const lstSuggestions = document.getElementById('list-suggestions');
     lstSuggestions.innerHTML = "";
@@ -134,7 +140,7 @@ document.getElementById('btn-improve').addEventListener('click', async () => {
     container.classList.add('hidden');
 
     try {
-        const response = await fetch("/improve", {
+        const response = await fetch(`${API_BASE}/improve`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

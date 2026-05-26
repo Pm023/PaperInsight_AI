@@ -24,6 +24,9 @@ import traceback
 
 @app.post("/analyze")
 async def analyze_pdf(file: UploadFile = File(...)):
+    print(f"Received file: {file.filename}, size: {len(await file.read())} bytes")
+    # Reset file pointer after reading size
+    await file.seek(0)
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
